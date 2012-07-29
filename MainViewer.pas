@@ -75,6 +75,7 @@ type
     procedure tb_zoomInClick(Sender: TObject);
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure SoftTriger1Click(Sender: TObject);
+
   private
   { Private declarations }
   public
@@ -112,7 +113,6 @@ type
     procedure ClearDraw();
     //为显示布置显示区域
     procedure SetShowZone();
-    function zoomFunc(lWidth :Longword; lHeight:Longword): boolean;
 
   end;
 
@@ -154,18 +154,18 @@ begin
               m_lBitCnt := pCommuInfo.ulFramePixelBits;
 
             //重新创建绘图资源
+
             PrepareForDraw();
             //重新设置显示区域位置和大小，居中显示
             SetShowZone();
         end;
-
         rcIn.left   := 0;
         rcIn.top    := 0;
         rcIn.right  := m_ImageInfo.ulMaxWidthSize;
         rcIn.bottom := m_ImageInfo.ulMaxHeightSize;
 
-        rcOut.left  := ShowPanel.Left;
-        rcOut.top   := ShowPanel.Top;
+        rcOut.left  := 1;
+        rcOut.top   := 1;
         rcOut.right := ShowPanel.Width;
         rcout.bottom:= ShowPanel.Height;
 
@@ -656,7 +656,6 @@ end;
 procedure TForm1.tb_zoomUpClick(Sender: TObject);
 var
   lWidth  :Longword;
-  lheight :Longword;
 begin
     if m_hDev = 0 then
     begin
@@ -669,12 +668,10 @@ begin
       Application.MessageBox('开窗失败，请重试!', '通知');
     end;
 
+    lWidth := ShowPanel.Width;
+    ShowPanel.Width := lWidth + 100;
+    ShowPanel.Height := round(((ShowPanel.Height*ShowPanel.Width)/lWidth)*1.009);
 
-    lWidth := m_CurImage.ulWidth + 100;
-    lHeight := round((m_CurImage.ulHeight*lWidth)/(m_CurImage.ulWidth));
-
-    // call zoom function now
-    zoomFunc(lWidth, lHeight);
 end;
 
 procedure TForm1.tb_browserImageClick(Sender: TObject);
@@ -725,94 +722,17 @@ end;
 procedure TForm1.tb_zoomInClick(Sender: TObject);
 var
   lWidth :Longword;
-  lHeight  :Longword;
 begin
-    if m_hDev = 0 then
-    begin
-      Application.MessageBox('设备未打开', '警告', MB_ICONWARNING);
-      abort;
-    end;
+  if m_hDev = 0 then
+  begin
+    Application.MessageBox('设备未打开', '警告', MB_ICONWARNING);
+     abort;
+  end;
 
-    if FCAM_GetParameter(m_hDev, GSP_IMAGE, @m_CurImage) <> FCAM_SUCCESS then
-    begin
-      Application.MessageBox('开窗失败，请重试!', '通知');
-    end;
-
-
-    lWidth := m_CurImage.ulWidth - 100;
-    lHeight := round((m_CurImage.ulHeight*lWidth)/(m_CurImage.ulWidth));
-
-    // call zoom function now
-    zoomFunc(lWidth, lHeight);
-    
+  lWidth := ShowPanel.Width;
+  ShowPanel.Width := lWidth - 100;
+  ShowPanel.Height := round(((ShowPanel.Height*ShowPanel.Width)/lWidth)*0.99);
 end;
-
-function TForm1.zoomFunc(lWidth :Longword; lHeight:Longword): Boolean;
-var
-  lLeft :Longword;
-  lTop  :Longword;
-begin
-    if m_hDev <> 0 then
-    begin
-        if m_ImageInfo.bAOI = True then
-        begin
-          lLeft := 0;
-          lTop  := 0;
-
-
-                //调节开窗位置为合理值
-                //起始列不能小于0
-                if lLeft < 0 then lLeft := 0;
-                //起始列不应该大于图像的最大宽度减宽度的最小值
-                if lLeft > (m_ImageInfo.ulMaxWidthSize - m_ImageInfo.ulWidthSizeUnit) then
-                    lLeft := m_ImageInfo.ulMaxWidthSize - m_ImageInfo.ulWidthSizeUnit;
-                //起始列应该是按起始列单位为单位
-                lLeft := lLeft div m_ImageInfo.ulLeftPosUnit * m_ImageInfo.ulLeftPosUnit;
-
-                 //起始行不能小于0
-                if lTop < 0  then lTop := 0;
-                //起始行不应该大于图像的最大高度减高度的最小值
-                if lTop > (m_ImageInfo.ulMaxHeightSize - m_ImageInfo.ulHeightSizeUnit) then
-                    lTop := m_ImageInfo.ulMaxHeightSize - m_ImageInfo.ulHeightSizeUnit;
-                //起始行应该是按起始行单位为单位
-                lTop := lTop div m_ImageInfo.ulTopPosUnit * m_ImageInfo.ulTopPosUnit;
-
-                //图像宽度不能小于最小宽度（即调节单位）
-                if lWidth < m_ImageInfo.ulWidthSizeUnit then lWidth := m_ImageInfo.ulWidthSizeUnit;
-                //图像起始列和图像宽度之和不能大于最大宽度
-                if lWidth > (m_ImageInfo.ulMaxWidthSize - lLeft) Then
-                    lWidth := m_ImageInfo.ulMaxWidthSize - lLeft;
-                //图像宽度应该按宽度调节单位为单位
-                lWidth := lWidth div m_ImageInfo.ulWidthSizeUnit * m_ImageInfo.ulWidthSizeUnit;
-                //图像宽度是四的整数倍，便于显示，用户可选择是否添加该项调整
-                lWidth := lWidth div 4 * 4;
-                
-                //图像高度不能小于最小高度
-                if lHeight < m_ImageInfo.ulHeightSizeUnit then lHeight := m_ImageInfo.ulHeightSizeUnit;
-                //图像起始行和高度之和不能大于最大高度
-                if lHeight > (m_ImageInfo.ulMaxHeightSize - lTop) Then
-                    lHeight := m_ImageInfo.ulMaxHeightSize - lTop;
-                //图像高度应该按高度调节单位为单位
-                lHeight := lHeight div m_ImageInfo.ulHeightSizeUnit * m_ImageInfo.ulHeightSizeUnit;
-
-                m_CurImage.ulLeft := lLeft;
-                m_CurImage.ulTop := lTop;
-                m_CurImage.ulWidth := lWidth;
-                m_CurImage.ulHeight := lHeight;
-
-                StatusBar1.Panels.Items[1].Text := 'Width: ' + IntToStr(lWidth) + ' Height:' + IntToStr(lHeight);
-
-                //设置图像开窗
-                if FCAM_SetParameter(m_hDev, GSP_IMAGE, @m_CurImage) <> FCAM_SUCCESS then
-                begin
-                    Application.MessageBox('开窗失败，请重试!', '通知');
-                end;
-                ShowPanel.Refresh;
-        end;
-    end;
-      Result := true;
-end;
-
 
 procedure TForm1.FormKeyPress(Sender: TObject; var Key: Char);
 begin
