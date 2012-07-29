@@ -101,6 +101,8 @@ type
     saveFileType: Integer;
     TimerTime: Integer;
 
+    rcIn, rcOut: RECT;
+
   public
     //函数,设备清除
     procedure DeviceClear();
@@ -128,9 +130,6 @@ procedure TForm1.MyTransMsgProc(var msg: TMessage);
 var
     bChange:   Boolean;
     pRGB : PRGBTRIPLE;
-    rgbs : RGBTRIPLE;
-    x, y: Integer;
-    rcIn, rcOut: RECT;
 begin
 
      //成功取到一帧图像数据的消息
@@ -160,17 +159,30 @@ begin
             SetShowZone();
         end;
 
+        rcIn.left   := 0;
+        rcIn.top    := 0;
+        rcIn.right  := m_ImageInfo.ulMaxWidthSize;
+        rcIn.bottom := m_ImageInfo.ulMaxHeightSize;
+
+        rcOut.left  := ShowPanel.Left;
+        rcOut.top   := ShowPanel.Top;
+        rcOut.right := ShowPanel.Width;
+        rcout.bottom:= ShowPanel.Height;
+
         //显示图像, 用户也可使用自己的显示函数
         //若需要缩放图像，可调用DrawUtil的缩放显示函数
           GetMem(pRGB, 3*pCommuInfo.ulFrameWidth*pCommuInfo.ulFrameHeight);  // apply for memory
-
           if FC_Raw2Rgb(pRGB, pCommuInfo.pDataBuffer, pCommuInfo.ulFrameWidth, pCommuInfo.ulFrameHeight
                       , BAYER_GR, ARITH_NEAREST_NEIGHBER) = 0 then
           begin
             StatusBar1.Panels.Items[0].Text := 'BW Format';
           end;
-          FD_DrawImage(m_hDraw, pRGB, 3*pCommuInfo.ulFrameWidth*pCommuInfo.ulFrameHeight, 0,0,0,0);
-          StatusBar1.Panels.Items[1].Text := 'Bit: ' + IntToStr(m_lBitCnt);
+//          FD_DrawImage(m_hDraw, pRGB, 3*pCommuInfo.ulFrameWidth*pCommuInfo.ulFrameHeight, 0,0,0,0);
+          FD_DrawImageEx(m_hDraw, pRGB, 3*pCommuInfo.ulFrameWidth*pCommuInfo.ulFrameHeight, rcIn, rcOut);
+
+          StatusBar1.Panels.Items[1].Text := 'Bit: ' + IntToStr(m_lBitCnt) +
+                  'Max Size: ' + IntToStr(m_ImageInfo.ulMaxWidthSize) +'x' +
+                  IntToStr(m_ImageInfo.ulMaxHeightSize);
 
           freeMem(pRGB);  // destory memory
 

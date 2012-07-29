@@ -249,7 +249,7 @@ object Form1: TForm1
   object MainMenu1: TMainMenu
     Images = ImageList1
     Left = 16
-    Top = 48
+    Top = 40
     object C1: TMenuItem
       Caption = '&Camera'
       object Start: TMenuItem
@@ -282,7 +282,7 @@ object Form1: TForm1
       end
     end
     object Settings1: TMenuItem
-      Caption = '&Settings'
+      Caption = '&Triger'
       object SoftTriger1: TMenuItem
         Caption = 'Soft Triger'
         OnClick = SoftTriger1Click
