@@ -1,0 +1,11 @@
+v1.0.1 @ 2012-06-22
+	*) Add new fullscreen function
+	*) Add Timer Function to capture camera
+	*) Set default capture image type as jpg format
+	*) Add capture directory for previews and zoom up/out
+	*) Disable some functions for not using
+	*) Set default language in english
+	*) Add config file for FCAM_View
+	
+v1.0.0 @ 2012-06-11
+	*) first release
